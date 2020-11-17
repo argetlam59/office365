@@ -1,14 +1,6 @@
-﻿<# 
+<# 
 This Script is ment for the inital deployment of a new 365 teneancy. 
 It will go through all the inital setup steps that need to be done to configure the tenancy properly. 
-
-To configure: 
-Find and replace
-%adminemail% - admin email that you want email notifcaitons to go to. 
-%partnerURL% - Microsoft partner link for new tennents. 
-%businessname% - Name of IT company.
-
-
 
 TODO
 DKIM
@@ -16,12 +8,27 @@ Commands to remember:
 Connect-EXOPSSession
 
 Changelog: 
-
+1.1 - Release - 18/11/2020
+    Added admin elevation.
 1.0 - Release 
+    Script is approved for use by Jason. 
     Added exchange install
     Added Partner setup
 #>
 
+function Test-Admin {
+    $currentUser = New-Object Security.Principal.WindowsPrincipal $([Security.Principal.WindowsIdentity]::GetCurrent())
+    $currentUser.IsInRole([Security.Principal.WindowsBuiltinRole]::Administrator)
+}
+
+if ((Test-Admin) -eq $false)  {
+    if ($elevated) {
+        # tried to elevate, did not work, aborting
+    } else {
+        Start-Process powershell.exe -Verb RunAs -ArgumentList ('-noprofile -noexit -file "{0}" -elevated' -f ($myinvocation.MyCommand.Definition))
+    }
+    exit
+}
 
 $msg = 'Do you need to install exchange powershell?'
 do {
@@ -44,7 +51,7 @@ do {
     choice /c yn /m $msg
     $response = $LASTEXITCODE
     if ($response -eq 1) {
-        Start-Process "chrome" -ArgumentList '-incognito --new-window %partnerURL% 
+        Start-Process "chrome" -ArgumentList '-incognito --new-window https://admin.microsoft.com/Adminportal/Home?invType=Administration&partnerId=52a139d9-5eee-412b-8c4c-b3af2695794c#/BillingAccounts/partner-invitation'
     }
         $response = 2
 } until ($response -eq 2)
@@ -77,16 +84,16 @@ do {
         $response = 2
 } until ($response -eq 2)
 
-$msg = 'Do you want to use the %businessname% Malware filter'
+$msg = 'Do you want to use the iAssist Malware filter'
 do {
     choice /c yn /m $msg
     $response = $LASTEXITCODE
     if ($response -eq 1) {
-        Set-MalwareFilterPolicy -Identity "Default" -Action DeleteMessage -EnableInternalSenderAdminNotifications $true -InternalSenderAdminAddress %adminemail% -EnableFileFilter $true     }
+        Set-MalwareFilterPolicy -Identity "Default" -Action DeleteMessage -EnableInternalSenderAdminNotifications $true -InternalSenderAdminAddress service@iassist.com.au -EnableFileFilter $true     }
         $response = 2
 } until ($response -eq 2)
 
-$msg = 'Do you want to use the %businessname% SPAM filter'
+$msg = 'Do you want to use the iAssist SPAM filter'
 do {
     choice /c yn /m $msg
     $response = $LASTEXITCODE
@@ -95,29 +102,29 @@ do {
         $response = 2
 } until ($response -eq 2)
 
-$msg = 'Do you want to use the %businessname% outbound SPAM filter'
+$msg = 'Do you want to use the iAssist outbound SPAM filter'
 do {
     choice /c yn /m $msg
     $response = $LASTEXITCODE
     if ($response -eq 1) {
-        Set-HostedOutboundSpamFilterPolicy -Identity Default -RecipientLimitExternalPerHour 500 -RecipientLimitInternalPerHour 500 -RecipientLimitPerDay 1000 -ActionWhenThresholdReached BlockUser -AutoForwardingMode Off -NotifyOutboundSpam $true -NotifyOutboundSpamRecipients %adminemail%
+        Set-HostedOutboundSpamFilterPolicy -Identity Default -RecipientLimitExternalPerHour 500 -RecipientLimitInternalPerHour 500 -RecipientLimitPerDay 1000 -ActionWhenThresholdReached BlockUser -AutoForwardingMode Off -NotifyOutboundSpam $true -NotifyOutboundSpamRecipients service@iassist.com.au
         $response = 2
     }
 } until ($response -eq 2)
 
-$msg = 'Do you want to use the %businessname% Phish filter'
+$msg = 'Do you want to use the iAssist Phish filter'
 do {
     choice /c yn /m $msg
     $response = $LASTEXITCODE
     if ($response -eq 1) {
-        New-AntiPhishPolicy -Name "%businessname% Phishy1" -Enabled $true -AuthenticationFailAction Quarantine -EnableAntispoofEnforcement $true -EnableUnauthenticatedSender $true
+        New-AntiPhishPolicy -Name "iAssist Phishy1" -Enabled $true -AuthenticationFailAction Quarantine -EnableAntispoofEnforcement $true -EnableUnauthenticatedSender $true
         $response = 2
     }
 } until ($response -eq 2)
 
 Connect-IPPSSession
 Write-Host "Creating Protection alerts"
-New-ProtectionAlert -Name "MailRedirect created" -Category Mailflow -ThreatType Activity -Operation MailRedirect -Severity Medium -NotifyUser %adminemail%  -AggregationType None  -Description "Email forward created"
-New-ProtectionAlert -Name "User Restricted from sending email" -Category Mailflow -ThreatType Activity -Operation CompromisedAccount -Severity Medium -NotifyUser %adminemail%  -AggregationType None  -Description "Email forward created"
+New-ProtectionAlert -Name "MailRedirect created" -Category Mailflow -ThreatType Activity -Operation MailRedirect -Severity Medium -NotifyUser service@iassist.com.au  -AggregationType None  -Description "Email forward created"
+New-ProtectionAlert -Name "User Restricted from sending email" -Category Mailflow -ThreatType Activity -Operation CompromisedAccount -Severity Medium -NotifyUser service@iassist.com.au  -AggregationType None  -Description "Email forward created"
 Pause
 Disconnect-ExchangeOnline
