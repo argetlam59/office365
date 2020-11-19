@@ -3,6 +3,7 @@ This Script is ment for the inital deployment of a new 365 teneancy.
 It will go through all the inital setup steps that need to be done to configure the tenancy properly. 
 
 Replace %email% with contact email for alerts. 
+Replace %URL% With partner link
 
 TODO
 Test DKIM
@@ -57,7 +58,7 @@ do {
     choice /c yn /m $msg
     $response = $LASTEXITCODE
     if ($response -eq 1) {
-        Start-Process "chrome" -ArgumentList '-incognito --new-window https://admin.microsoft.com/Adminportal/Home?invType=Administration&partnerId=52a139d9-5eee-412b-8c4c-b3af2695794c#/BillingAccounts/partner-invitation'
+        Start-Process "chrome" -ArgumentList '-incognito --new-window %URL%'
     }
         $response = 2
 } until ($response -eq 2)
