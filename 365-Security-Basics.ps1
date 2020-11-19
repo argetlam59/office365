@@ -2,12 +2,18 @@
 This Script is ment for the inital deployment of a new 365 teneancy. 
 It will go through all the inital setup steps that need to be done to configure the tenancy properly. 
 
+Replace %email% with contact email for alerts. 
+
 TODO
-DKIM
+Test DKIM
 Commands to remember: 
 Connect-EXOPSSession
 
 Changelog: 
+1.2 - Release - 19/11/2020
+    Added DKIM support.
+    Removed 
+    useless branding. 
 1.1 - Release - 18/11/2020
     Added admin elevation.
 1.0 - Release 
@@ -43,7 +49,7 @@ do {
 cls
 $msg = 'Do you need to add the tenancy into our partner portal? 
 
-PLEASE NOTE: If you say yes it will open a incogito window for chrome. 
+PLEASE NOTE: If you say yes it will open a incogito window for CHROME. 
 If you are signed into another tenancy it will add it to the wrong instance.
 
 '
@@ -84,16 +90,16 @@ do {
         $response = 2
 } until ($response -eq 2)
 
-$msg = 'Do you want to use the iAssist Malware filter'
+$msg = 'Do you want to use the  Malware filter'
 do {
     choice /c yn /m $msg
     $response = $LASTEXITCODE
     if ($response -eq 1) {
-        Set-MalwareFilterPolicy -Identity "Default" -Action DeleteMessage -EnableInternalSenderAdminNotifications $true -InternalSenderAdminAddress service@iassist.com.au -EnableFileFilter $true     }
+        Set-MalwareFilterPolicy -Identity "Default" -Action DeleteMessage -EnableInternalSenderAdminNotifications $true -InternalSenderAdminAddress service@.com.au -EnableFileFilter $true     }
         $response = 2
 } until ($response -eq 2)
 
-$msg = 'Do you want to use the iAssist SPAM filter'
+$msg = 'Do you want to use the  SPAM filter'
 do {
     choice /c yn /m $msg
     $response = $LASTEXITCODE
@@ -102,29 +108,80 @@ do {
         $response = 2
 } until ($response -eq 2)
 
-$msg = 'Do you want to use the iAssist outbound SPAM filter'
+$msg = 'Do you want to use the  outbound SPAM filter'
 do {
     choice /c yn /m $msg
     $response = $LASTEXITCODE
     if ($response -eq 1) {
-        Set-HostedOutboundSpamFilterPolicy -Identity Default -RecipientLimitExternalPerHour 500 -RecipientLimitInternalPerHour 500 -RecipientLimitPerDay 1000 -ActionWhenThresholdReached BlockUser -AutoForwardingMode Off -NotifyOutboundSpam $true -NotifyOutboundSpamRecipients service@iassist.com.au
+        Set-HostedOutboundSpamFilterPolicy -Identity Default -RecipientLimitExternalPerHour 500 -RecipientLimitInternalPerHour 500 -RecipientLimitPerDay 1000 -ActionWhenThresholdReached BlockUser -AutoForwardingMode Off -NotifyOutboundSpam $true -NotifyOutboundSpamRecipients %email%
         $response = 2
     }
 } until ($response -eq 2)
 
-$msg = 'Do you want to use the iAssist Phish filter'
+$msg = 'Do you want to use the  Phish filter'
 do {
     choice /c yn /m $msg
     $response = $LASTEXITCODE
     if ($response -eq 1) {
-        New-AntiPhishPolicy -Name "iAssist Phishy1" -Enabled $true -AuthenticationFailAction Quarantine -EnableAntispoofEnforcement $true -EnableUnauthenticatedSender $true
+        New-AntiPhishPolicy -Name " Phishy1" -Enabled $true -AuthenticationFailAction Quarantine -EnableAntispoofEnforcement $true -EnableUnauthenticatedSender $true
+        $response = 2
+    }
+} until ($response -eq 2)
+
+$msg = 'Do you want to use Enable DKIM?'
+do {
+    choice /c yn /m $msg
+    $response = $LASTEXITCODE
+    if ($response -eq 1) {
+        cls
+        Write-Host "
+        This file has been created in order to help you create the required DNS records for your domain.
+        There will be two dialog boxes open up asking you to enter the domain info.
+
+        In the second, it is imporant that you include the '.onmicrosoft.com' section. 
+        If DNS managment isn't with 365 yet; then propergation may take 1-24 hours. 
+        "
+        Pause
+        [System.Reflection.Assembly]::LoadWithPartialName('Microsoft.VisualBasic') | Out-Null
+        $domain = [Microsoft.VisualBasic.Interaction]::InputBox("Domain that you want to setup DKIM", "Domain that you want to setup DKIM")
+        $maindomain = [Microsoft.VisualBasic.Interaction]::InputBox("Please enter the orginal .onmicrosoft.com domain", "Please enter the orginal .onmicrosoft.com domain")
+        $stupiddomain = $domain -replace '\W','-'
+        Write-Host "
+        
+        
+        
+        Host name:            selector1._domainkey
+        Points to address or value:    selector1-$stupiddomain._domainkey.$maindomain
+        TTL:                3600
+        
+        Host name:            selector2._domainkey
+        Points to address or value:    selector2-$stupiddomain._domainkey.$maindomain
+        TTL:                3600
+        "
+        Write-Host "
+        Now you need to take the above and create CNAME records for the above values. 
+        If these domains are in 365 then you will be able to do the next step immedatly.
+        If not then you will need to run 'dkim.ps1' "
+        #whitespace
+        Write-Host "       
+        "
+        Pause
+            $msg = 'Have you added the DKIM records?'
+            do {
+                choice /c yn /m $msg
+                $response = $LASTEXITCODE
+                if ($response -eq 1) {
+                    New-DkimSigningConfig -DomainName $domain -Enabled $true
+                $response = 2
+            }
+        } until ($response -eq 2)
         $response = 2
     }
 } until ($response -eq 2)
 
 Connect-IPPSSession
 Write-Host "Creating Protection alerts"
-New-ProtectionAlert -Name "MailRedirect created" -Category Mailflow -ThreatType Activity -Operation MailRedirect -Severity Medium -NotifyUser service@iassist.com.au  -AggregationType None  -Description "Email forward created"
-New-ProtectionAlert -Name "User Restricted from sending email" -Category Mailflow -ThreatType Activity -Operation CompromisedAccount -Severity Medium -NotifyUser service@iassist.com.au  -AggregationType None  -Description "Email forward created"
+New-ProtectionAlert -Name "MailRedirect created" -Category Mailflow -ThreatType Activity -Operation MailRedirect -Severity Medium -NotifyUser %email%  -AggregationType None  -Description "Email forward created"
+New-ProtectionAlert -Name "User Restricted from sending email" -Category Mailflow -ThreatType Activity -Operation CompromisedAccount -Severity Medium -NotifyUser %email%  -AggregationType None  -Description "Email forward created"
 Pause
 Disconnect-ExchangeOnline
