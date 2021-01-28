@@ -11,6 +11,8 @@ Commands to remember:
 Connect-EXOPSSession
 
 Changelog: 
+1.2.1 - Test - 28/01/2021
+    Added Set-Ex poilicy to begining and end. 
 1.2 - Release - 19/11/2020
     Added DKIM support.
     Removed 
@@ -36,7 +38,7 @@ if ((Test-Admin) -eq $false)  {
     }
     exit
 }
-
+Set-ExecutionPolicy Unrestricted -Force
 $msg = 'Do you need to install exchange powershell?'
 do {
     choice /c yn /m $msg
@@ -186,3 +188,4 @@ New-ProtectionAlert -Name "MailRedirect created" -Category Mailflow -ThreatType 
 New-ProtectionAlert -Name "User Restricted from sending email" -Category Mailflow -ThreatType Activity -Operation CompromisedAccount -Severity Medium -NotifyUser %email%  -AggregationType None  -Description "Email forward created"
 Pause
 Disconnect-ExchangeOnline
+Set-ExecutionPolicy Restricted -Force
