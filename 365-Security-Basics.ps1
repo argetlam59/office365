@@ -13,6 +13,7 @@ Connect-EXOPSSession
 Changelog: 
 1.2.1 - Test - 28/01/2021
     Added Set-Ex poilicy to begining and end. 
+    Updated the phising policy to match changes to Msoft. settings.
 1.2 - Release - 19/11/2020
     Added DKIM support.
     Removed 
@@ -126,7 +127,7 @@ do {
     choice /c yn /m $msg
     $response = $LASTEXITCODE
     if ($response -eq 1) {
-        New-AntiPhishPolicy -Name " Phishy1" -Enabled $true -AuthenticationFailAction Quarantine -EnableAntispoofEnforcement $true -EnableUnauthenticatedSender $true
+        New-AntiPhishPolicy -Name " Phishy1" -Enabled $true -AuthenticationFailAction Quarantine -EnableSpoofIntelligence $true -EnableUnauthenticatedSender $true
         $response = 2
     }
 } until ($response -eq 2)
