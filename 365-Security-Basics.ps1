@@ -6,18 +6,21 @@ Replace %email% with contact email for alerts.
 Replace %URL% With partner link
 
 TODO
-Test DKIM
+Set Execution Policy and remove
+Fix creds. 
+Security Defaults. 
+
 Commands to remember: 
 Connect-EXOPSSession
 
 Changelog: 
-1.2.1 - Test - 28/01/2021
-    Added Set-Ex poilicy to begining and end. 
-    Updated the phising policy to match changes to Msoft. settings.
+1.3 - Release - 19/05/2021
+    Added pause after enableing customisation
+    Also Fixed spoof intel. 
+    This line is added as a test for versioning. 
 1.2 - Release - 19/11/2020
     Added DKIM support.
-    Removed 
-    useless branding. 
+    Removed iassist useless branding. 
 1.1 - Release - 18/11/2020
     Added admin elevation.
 1.0 - Release 
@@ -39,7 +42,7 @@ if ((Test-Admin) -eq $false)  {
     }
     exit
 }
-Set-ExecutionPolicy Unrestricted -Force
+
 $msg = 'Do you need to install exchange powershell?'
 do {
     choice /c yn /m $msg
@@ -61,7 +64,7 @@ do {
     choice /c yn /m $msg
     $response = $LASTEXITCODE
     if ($response -eq 1) {
-        Start-Process "chrome" -ArgumentList '-incognito --new-window %URL%'
+        Start-Process "chrome" -ArgumentList '-incognito --new-window %URL%
     }
         $response = 2
 } until ($response -eq 2)
@@ -72,6 +75,9 @@ Connect-ExchangeOnline
 Write-Host "Did you just get a bunch of red Errors? That likely means you need to install exchange powershell again. Close this window and restart as admin."
 Pause
 Enable-OrganizationCustomization
+#pause here as there seems to be bug if you try and do anything straight after enabling customisation? 
+Pause
+Write-Host "Please wait on this screen for 20 seconds."
 Set-AdminAuditLogConfig -UnifiedAuditLogIngestionEnabled $true
 
 $msg = 'Do you want to use Enable Bulk mail filtering?'
@@ -99,7 +105,7 @@ do {
     choice /c yn /m $msg
     $response = $LASTEXITCODE
     if ($response -eq 1) {
-        Set-MalwareFilterPolicy -Identity "Default" -Action DeleteMessage -EnableInternalSenderAdminNotifications $true -InternalSenderAdminAddress service@.com.au -EnableFileFilter $true     }
+        Set-MalwareFilterPolicy -Identity "Default" -Action DeleteMessage -EnableInternalSenderAdminNotifications $true -InternalSenderAdminAddress %email% -EnableFileFilter $true     }
         $response = 2
 } until ($response -eq 2)
 
@@ -127,7 +133,7 @@ do {
     choice /c yn /m $msg
     $response = $LASTEXITCODE
     if ($response -eq 1) {
-        New-AntiPhishPolicy -Name " Phishy1" -Enabled $true -AuthenticationFailAction Quarantine -EnableSpoofIntelligence $true -EnableUnauthenticatedSender $true
+        New-AntiPhishPolicy -Name "Phishy1" -Enabled $true -AuthenticationFailAction Quarantine -EnableAntispoofEnforcement $true -EnableUnauthenticatedSender $true
         $response = 2
     }
 } until ($response -eq 2)
@@ -189,4 +195,3 @@ New-ProtectionAlert -Name "MailRedirect created" -Category Mailflow -ThreatType 
 New-ProtectionAlert -Name "User Restricted from sending email" -Category Mailflow -ThreatType Activity -Operation CompromisedAccount -Severity Medium -NotifyUser %email%  -AggregationType None  -Description "Email forward created"
 Pause
 Disconnect-ExchangeOnline
-Set-ExecutionPolicy Restricted -Force
