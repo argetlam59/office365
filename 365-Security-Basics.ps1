@@ -1,22 +1,21 @@
-<# 
+﻿<# 
 This Script is ment for the inital deployment of a new 365 teneancy. 
 It will go through all the inital setup steps that need to be done to configure the tenancy properly. 
 
-Replace %email% with contact email for alerts. 
-Replace %URL% With partner link
-
 TODO
-Set Execution Policy and remove
-Fix creds. 
-Security Defaults. 
 
 Commands to remember: 
 Connect-EXOPSSession
 
 Changelog: 
+
+1.3.1 - Release - 19/06/2021
+    Added Requires flags to the front of the script. 
+    Added Execution policy Toggle at the end
+    Quick Tidy
+    Security Defaults isn't going to be able to work in this current state. v2 will be DSC I think, or Azure App.
 1.3 - Release - 19/05/2021
     Added pause after enableing customisation
-    Also Fixed spoof intel. 
     This line is added as a test for versioning. 
 1.2 - Release - 19/11/2020
     Added DKIM support.
@@ -28,7 +27,9 @@ Changelog:
     Added exchange install
     Added Partner setup
 #>
+#List of Requirments
 
+#Requires -Module @{ ModuleName = 'ExchangeOnlineManagement'; ModuleVersion = '2.0.5' }
 function Test-Admin {
     $currentUser = New-Object Security.Principal.WindowsPrincipal $([Security.Principal.WindowsIdentity]::GetCurrent())
     $currentUser.IsInRole([Security.Principal.WindowsBuiltinRole]::Administrator)
@@ -43,6 +44,11 @@ if ((Test-Admin) -eq $false)  {
     exit
 }
 
+#Variables for General Public
+[System.Reflection.Assembly]::LoadWithPartialName('Microsoft.VisualBasic') | Out-Null
+$partnerLink = [Microsoft.VisualBasic.Interaction]::InputBox("Partner Link for adding to MPN", "Partner Link for adding to MPN")
+$alertEmail = [Microsoft.VisualBasic.Interaction]::InputBox("Email for recieving alerts", "Email for recieving alerts")
+
 $msg = 'Do you need to install exchange powershell?'
 do {
     choice /c yn /m $msg
@@ -53,7 +59,7 @@ do {
     }
         $response = 2
 } until ($response -eq 2)
-cls
+Clear-Host
 $msg = 'Do you need to add the tenancy into our partner portal? 
 
 PLEASE NOTE: If you say yes it will open a incogito window for CHROME. 
@@ -64,20 +70,20 @@ do {
     choice /c yn /m $msg
     $response = $LASTEXITCODE
     if ($response -eq 1) {
-        Start-Process "chrome" -ArgumentList '-incognito --new-window %URL%
+        Start-Process "chrome" -ArgumentList "-incognito --new-window $partnerLink" 
     }
         $response = 2
 } until ($response -eq 2)
 
 
 Pause
-Connect-ExchangeOnline
+Connect-ExchangeOnline -Credential
 Write-Host "Did you just get a bunch of red Errors? That likely means you need to install exchange powershell again. Close this window and restart as admin."
 Pause
 Enable-OrganizationCustomization
 #pause here as there seems to be bug if you try and do anything straight after enabling customisation? 
-Pause
 Write-Host "Please wait on this screen for 20 seconds."
+Pause
 Set-AdminAuditLogConfig -UnifiedAuditLogIngestionEnabled $true
 
 $msg = 'Do you want to use Enable Bulk mail filtering?'
@@ -105,7 +111,7 @@ do {
     choice /c yn /m $msg
     $response = $LASTEXITCODE
     if ($response -eq 1) {
-        Set-MalwareFilterPolicy -Identity "Default" -Action DeleteMessage -EnableInternalSenderAdminNotifications $true -InternalSenderAdminAddress %email% -EnableFileFilter $true     }
+        Set-MalwareFilterPolicy -Identity "Default" -Action DeleteMessage -EnableInternalSenderAdminNotifications $true -InternalSenderAdminAddress $alertEmail -EnableFileFilter $true     }
         $response = 2
 } until ($response -eq 2)
 
@@ -123,7 +129,7 @@ do {
     choice /c yn /m $msg
     $response = $LASTEXITCODE
     if ($response -eq 1) {
-        Set-HostedOutboundSpamFilterPolicy -Identity Default -RecipientLimitExternalPerHour 500 -RecipientLimitInternalPerHour 500 -RecipientLimitPerDay 1000 -ActionWhenThresholdReached BlockUser -AutoForwardingMode Off -NotifyOutboundSpam $true -NotifyOutboundSpamRecipients %email%
+        Set-HostedOutboundSpamFilterPolicy -Identity Default -RecipientLimitExternalPerHour 500 -RecipientLimitInternalPerHour 500 -RecipientLimitPerDay 1000 -ActionWhenThresholdReached BlockUser -AutoForwardingMode Off -NotifyOutboundSpam $true -NotifyOutboundSpamRecipients $alertEmail
         $response = 2
     }
 } until ($response -eq 2)
@@ -133,7 +139,7 @@ do {
     choice /c yn /m $msg
     $response = $LASTEXITCODE
     if ($response -eq 1) {
-        New-AntiPhishPolicy -Name "Phishy1" -Enabled $true -AuthenticationFailAction Quarantine -EnableAntispoofEnforcement $true -EnableUnauthenticatedSender $true
+        New-AntiPhishPolicy -Name "Phishy1" -Enabled $true -AuthenticationFailAction Quarantine -EnableSpoofIntelligence $true -EnableUnauthenticatedSender $true
         $response = 2
     }
 } until ($response -eq 2)
@@ -143,7 +149,7 @@ do {
     choice /c yn /m $msg
     $response = $LASTEXITCODE
     if ($response -eq 1) {
-        cls
+        Clear-Host
         Write-Host "
         This file has been created in order to help you create the required DNS records for your domain.
         There will be two dialog boxes open up asking you to enter the domain info.
@@ -191,7 +197,19 @@ do {
 
 Connect-IPPSSession
 Write-Host "Creating Protection alerts"
-New-ProtectionAlert -Name "MailRedirect created" -Category Mailflow -ThreatType Activity -Operation MailRedirect -Severity Medium -NotifyUser %email%  -AggregationType None  -Description "Email forward created"
-New-ProtectionAlert -Name "User Restricted from sending email" -Category Mailflow -ThreatType Activity -Operation CompromisedAccount -Severity Medium -NotifyUser %email%  -AggregationType None  -Description "Email forward created"
+New-ProtectionAlert -Name "MailRedirect created" -Category Mailflow -ThreatType Activity -Operation MailRedirect -Severity Medium -NotifyUser $alertEmail  -AggregationType None  -Description "Email forward created"
+New-ProtectionAlert -Name "User Restricted from sending email" -Category Mailflow -ThreatType Activity -Operation CompromisedAccount -Severity Medium -NotifyUser $alertEmail  -AggregationType None  -Description "Email forward created"
 Pause
+#Set Execution Policy Clear
+do {
+    choice /c yn /m "Do you want to change your Execution Policy to restricted again?"
+    $response = $LASTEXITCODE
+    if ($response -eq 1) {
+        Set-ExecutionPolicy Restricted -Force
+    $response = 2
+}
+} until ($response -eq 2)
+
 Disconnect-ExchangeOnline
+Write-Host "Finished!"
+Pause
