@@ -25,7 +25,6 @@ if ((Test-Admin) -eq $false)  {
     }
     exit
 }
-Set-ExecutionPolicy Unrestricted -Force
 $msg = 'Do you need to install exchange powershell?'
 do {
     choice /c yn /m $msg

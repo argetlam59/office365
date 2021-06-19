@@ -23,20 +23,17 @@ if ((Test-Admin) -eq $false)  {
     }
     exit
 }
-Set-ExecutionPolicy Unrestricted -Force
 $msg = 'Do you need to install exchange powershell?'
 do {
     choice /c yn /m $msg
     $response = $LASTEXITCODE
     if ($response -eq 1) {
         Install-Module -Name ExchangeOnlineManagement
-        Pause
         Update-Module -Name ExchangeOnlineManagement
     }
         $response = 2
 } until ($response -eq 2)
-cls
-
+Clear-Host
 Connect-ExchangeOnline
 Write-Host "
 Did you just get a bunch of red Errors? That likely means you need to install exchange powershell again. Close this window and restart as admin."
@@ -48,8 +45,8 @@ $user = [Microsoft.VisualBasic.Interaction]::InputBox("Enter the email address U
 [System.Reflection.Assembly]::LoadWithPartialName('Microsoft.VisualBasic') | Out-Null
 $admin = [Microsoft.VisualBasic.Interaction]::InputBox("Enter the email address ADMIN", "PERMISSIONS")
 
-Add-MailboxPermission -Identity $user -User $admin -AccessRights FullAccess -AutoMapping $false
+Add-MailboxPermission -Identity $admin -User $user -AccessRights FullAccess -AutoMapping $false
 
-Pause
 Disconnect-ExchangeOnline
 Set-ExecutionPolicy Restricted -Force
+Pause
