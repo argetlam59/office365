@@ -8,7 +8,10 @@ Commands to remember:
 Connect-EXOPSSession
 
 Changelog: 
-
+1.3.2 - Release - 29/06/2021
+    Added two new rules into the transport rule section. One for filtering email spoofing and another to filter out TLD domains that generally support spam. 
+    With these two rules I would recommend testing with a reporting email going to a monitored email. Adjust filters to suit your client needs. 
+    This may not be apro for all clients. 
 1.3.1 - Release - 19/06/2021
     Added Requires flags to the front of the script. 
     Added Execution policy Toggle at the end
@@ -103,6 +106,25 @@ do {
     $response = $LASTEXITCODE
     if ($response -eq 1) {
         New-TransportRule -Name bitcoin -Enabled $true -SetSCL 9 -SubjectOrBodyContainsWords bitcoin, bitc0in, b1tcoin      }
+        $response = 2
+} until ($response -eq 2)
+
+$msg = 'Do you want to use the Domain Spoofing rule?'
+do {
+    choice /c yn /m $msg
+    $response = $LASTEXITCODE
+    if ($response -eq 1) {
+        $spoofDomain = [Microsoft.VisualBasic.Interaction]::InputBox("Enter the DOMAIN address", "DOMAIN")
+        New-TransportRule -Name Domain Spoofing Rule -Enabled $true -FromScope NotInOrganization -SenderDomainIs $spoofDomain -SecSCL 7 }
+        $response = 2
+} until ($response -eq 2)
+
+$msg = 'Do you want to enable TLD Filter? Please be careful with this one. '
+do {
+    choice /c yn /m $msg
+    $response = $LASTEXITCODE
+    if ($response -eq 1) {
+        New-TransportRule -Name TLD Filter -Enabled $true -FromScope NotInOrganization -SecSCL 8 -ExceptIfFromAddressMatchesPatterns ".aws",".org",".net",".au",".com" }
         $response = 2
 } until ($response -eq 2)
 
