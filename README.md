@@ -1,6 +1,7 @@
 # office365
 09/08/2021 - ss
 Uploaded the chrome notification script. Should have tested to see if it runs as local user or if you need admin. 99% sure that you are going to need to run it as admin which makes me think I should just elevete the script at the beginning. But please if you run into issues with the script please let me know. 
+
 29/06/2021 - ss
 I updated the 365 script to include a couple of transport rules. These could have been done in other places however I like using the transport rules as they are pretty simple if statments that do what they are told. Please be careful with the TLD filter. It has capacity to block legitimate emails. This was made in the mind set of a Australian company that doesn't deal with alot of overseas companies or domains. 
 
