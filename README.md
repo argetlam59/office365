@@ -1,4 +1,7 @@
 # office365
+15/02/2021 - ss
+Uploaded hands off 365 security defaults. Same as the other 365 but without all the constant popups. 
+
 09/08/2021 - ss
 Uploaded the chrome notification script. Should have tested to see if it runs as local user or if you need admin. 99% sure that you are going to need to run it as admin which makes me think I should just elevete the script at the beginning. But please if you run into issues with the script please let me know. 
 
