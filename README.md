@@ -5,6 +5,7 @@ I have updated the Hands off 365 script; After some though I have descided that 
 Added 
 * Get-InstalledMod check - It will now check for dependent modules and install them if they are missing. 
 * Changed some of the regions and made it simpler to follow through the functions and such at the top of the script. 
+* I also Added the DKIM files that I have. Not sure if I deleted them earlier or if I just never bought them to the public. 
 TODO: 
 * Comment out the lines from the script so that people can adjust more settings that they want to. 
 * Possibly functionify some of the settings so that people can add switches in or change the settings a little easier, still thinking about this one. 
