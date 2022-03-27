@@ -1,11 +1,38 @@
 <#
 Hands off 365 Security Script for Security Defaults. 
 #>
-
 #region Variables
-$partnerLink = 'Partner link'
-$notifcationEmail = 'Email for notifications'
-$businessName = 'MSP Business Name'
+$partnerLink = 'Your Partner Center Link'
+$notifcationEmail = 'Email Address for Notifications' #this is the email address that will receive the notifications sent from 365
+$businessName = 'Your Business Name'
+#endregion
+
+#region Azure App Secrets
+$ApplicationId = 'APPID'
+$ApplicationSecret = 'SmallSecret' | ConvertTo-SecureString -Force -AsPlainText
+$RefreshToken = 'SuperLongrefreshToken'
+#endregion
+
+#region Dependencies
+if (Get-InstalledModule -Name 'ExchangeOnlineManagement','AzureAD','MSOnline')
+{
+    Write-Host -ForegroundColor Green "The required Modules are already installed."
+}
+else 
+{
+    Write-Host -ForegroundColor Red "The required Modules are not installed. Installing Now."
+    $modules = @(
+    'ExchangeOnlineManagement'
+    'AzureAD'
+    'MSOnline'
+    'PartnerCenter'
+    'PSWriteHTML'
+    )
+foreach ($item in $modules) {
+    Write-Host "Installing Module $item"
+    Install-Module -Name $item -Scope CurrentUser
+}
+}
 #endregion
 
 #region Connections
@@ -19,10 +46,13 @@ $CustomerTenant = Get-AcceptedDomain | Where-Object {$_.Name -like "*onmicrosoft
 $PrimaryDomain = Get-AcceptedDomain | Where-Object {$_.Default -eq $true} | Select-Object -ExpandProperty Domainname
 #endregion
 
-#region Azure App Secrets
-$ApplicationId = 'AppID'
-$ApplicationSecret = 'App Secret' | ConvertTo-SecureString -Force -AsPlainText
-$RefreshToken = 'SuperLongRefreshToken'
+#region  Failsafe
+if ($CustomerTenant -eq 'XXX.onmicrosoft.com') {
+    Write-Error "XXX is not supported with this script"
+    Disconnect-ExchangeOnline
+    Pause
+    Exit
+} 
 #endregion
 
 #region Functions
@@ -50,7 +80,7 @@ function CustomEnable {
     $a = Get-OrganizationConfig
     if ($a.IsDehydrated -like 'True') {
         try {
-            Write-Host "Trying to enable customisation" -ForegroundColor Red
+            Write-Host "Trying to enable customisation" -ForegroundColor Green
             Enable-OrganizationCustomization -ErrorAction Stop
         }
         catch {
@@ -66,12 +96,12 @@ function CustomEnable {
     Write-Host "No Action required"
     }
 }
-
 #endregion
 
 #region Script
-Start-Process "chrome" -ArgumentList "-incognito --new-window $partnerLink"
-Start-Process "msedge" -ArgumentList "-inprivate --new-window $partnerLink"
+Write-Host "Opening new Browser windows to add client into partner." -ForegroundColor Green
+Start-Process "chrome" -ArgumentList "-incognito --new-window $partnerLink" 
+Start-Process "msedge" -ArgumentList "-inprivate --new-window $partnerLink" | Out-Null
 Write-Host "Enabling Cusomisation" -ForegroundColor Green
 CustomEnable
 Write-Host "Starting Sleep 30 Seconds" -ForegroundColor Red
