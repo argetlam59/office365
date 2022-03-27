@@ -1,4 +1,17 @@
 # office365
+27/03/2022 - ss
+
+I have updated the Hands off 365 script; After some though I have descided that I am not going to be doing any more updates to the 365 security defaults script and instead will be focusing on ensuring that the hands off script is a, user friendly and b, level 1 tech friendly. Aim of the game is your newest tech should be able to sit there and run this script. 
+Added 
+* Get-InstalledMod check - It will now check for dependent modules and install them if they are missing. 
+* Changed some of the regions and made it simpler to follow through the functions and such at the top of the script. 
+TODO: 
+* Comment out the lines from the script so that people can adjust more settings that they want to. 
+* Possibly functionify some of the settings so that people can add switches in or change the settings a little easier, still thinking about this one. 
+* Use Graph more, We should be able to do more with the secureApp method. 
+
+NOTE: You should look at CIPP (https://cipp.app/) This does everything the script does but better. Kelvin and his team have made this a fairly great product and you should be able to use your azure credits from partner to be able to pay for the hosting for the site. Personally, I think this will be the future standard for multi tenent managment. 
+
 15/02/2021 - ss
 
 Uploaded hands off 365 security defaults. Same as the other 365 but without all the constant popups. 
